@@ -1,2 +1,2 @@
 # SpendWise-Backend
-Backend da aplicação SpendWise
+Backend da aplicação SpendWise(Sistema de gestão financeira pessoal).
