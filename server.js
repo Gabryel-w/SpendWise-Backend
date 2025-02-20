@@ -1,19 +1,33 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const http = require("http");
+const WebSocket = require("ws");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
+
 
 app.get("/", (req, res) => {
     res.send("API Rodando!");
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
+server.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
 
 const supabase = require("./supabase");
+
+const broadcast = (message) => {
+    wss.clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify(message));
+        }
+    });
+};
 
 app.get("/users", async (req, res) => {
     const { data, error } = await supabase.from("users").select("*");
@@ -89,6 +103,7 @@ app.post("/transactions", async (req, res) => {
         return res.status(400).json(error); // Adicione "return" para evitar múltiplas respostas
     }
 
+    broadcast({ type: "update" });
     return res.status(201).json(data); // Retorna a resposta e evita erro
 });
 
@@ -124,6 +139,7 @@ app.put("/transactions/:id", async (req, res) => {
         return res.status(400).json(error);
     }
 
+    broadcast({ type: "update" });
     res.json({ message: "Transação atualizada com sucesso." });
 });
 
@@ -136,5 +152,6 @@ app.delete("/transactions/:id", async(req, res) => {
         return res.status(400).json(error);
     }
 
+    broadcast({ type: "update" });
     res.json({message: "Transação removida com sucesso."});
 });
