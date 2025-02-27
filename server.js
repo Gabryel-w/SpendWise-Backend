@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const http = require("http");
 const WebSocket = require("ws");
+const fs = require("fs");
 
 const app = express();
 app.use(cors());
@@ -11,6 +12,7 @@ app.use(express.json());
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
+const faq = JSON.parse(fs.readFileSync("faq.json", "utf8"));
 
 app.get("/", (req, res) => {
     res.send("API Rodando!");
@@ -154,4 +156,28 @@ app.delete("/transactions/:id", async(req, res) => {
 
     broadcast({ type: "update" });
     res.json({message: "Transação removida com sucesso."});
+});
+
+app.post("/api/chat", (req, res) => {
+    const { message } = req.body;
+
+    if (!message) {
+        return res.status(400).json({ error: "Mensagem não fornecida." });
+    }
+
+    const lowerMessage = message.toLowerCase();
+    const foundQuestion = faq.find(q => lowerMessage.includes(q.question.toLowerCase()));
+
+    // Perguntas sugeridas padrão
+    const suggestedQuestions = [
+        "Como posso economizar mais?",
+        "Quanto gastei este mês?",
+        "Qual foi minha maior despesa?"
+    ];
+
+    if (foundQuestion) {
+        return res.json({ reply: foundQuestion.answer, suggestedQuestions });
+    } else {
+        return res.json({ reply: "Desculpe, não entendi sua pergunta. Tente reformular.", suggestedQuestions });
+    }
 });

@@ -1,0 +1,18 @@
+[
+    {
+        "question": "Como posso adicionar uma nova transação?",
+        "answer": "Para adicionar uma nova transação, vá até a tela principal, clique no botão de adicionar e preencha os detalhes necessários."
+    },
+    {
+        "question": "Como posso visualizar meu saldo atual?",
+        "answer": "Seu saldo atual é mostrado no topo da página inicial. Ele é calculado com base nas suas transações registradas."
+    },
+    {
+        "question": "Como excluir uma transação?",
+        "answer": "Para excluir uma transação, vá até a lista de transações, clique na transação desejada e selecione a opção de excluir."
+    },
+    {
+        "question": "Como posso economizar mais?",
+        "answer":  "Testando"
+    }
+]
