@@ -12,9 +12,9 @@
 Go to Supabase create an account and start a new project.
 In Supabase Studio, navigate to the Tables section and create the following tables:
 
-## Database Schema
+Database Schema:
 
-### Table: `users`
+Table: `users`
 | Column      | Type        | Description               |
 |------------|------------|---------------------------|
 | id         | UUID        | Unique identifier        |
@@ -23,7 +23,7 @@ In Supabase Studio, navigate to the Tables section and create the following tabl
 | password   | TEXT        | User's password (hashed) |
 | created_at | TIMESTAMP   | Account creation date    |
 
-### Table: `transactions`
+Table: `transactions`
 | Column      | Type          | Description                 |
 |------------|--------------|-----------------------------|
 | id         | UUID          | Unique transaction ID      |
