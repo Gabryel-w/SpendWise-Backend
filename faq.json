@@ -13,6 +13,30 @@
     },
     {
         "question": "Como posso economizar mais?",
-        "answer":  "Testando"
+        "answer": "Para economizar mais, acompanhe suas despesas regularmente, defina um orçamento mensal e evite compras por impulso. Utilize categorias para organizar seus gastos e identifique onde pode reduzir despesas desnecessárias. Pequenos cortes diários podem fazer uma grande diferença no final do mês!"
+    },
+    {
+        "question": "O que é o SpendWise?",
+        "answer": "O SpendWise é um aplicativo de gestão financeira pessoal que ajuda você a controlar seus gastos e receitas de forma simples."
+    },
+    {
+        "question": "O SpendWise é gratuito?",
+        "answer": "Sim, o SpendWise é totalmente gratuito para uso."
+    },
+    {
+        "question": "Como posso editar uma transação?",
+        "answer": "Acesse a lista de transações, clique na transação que deseja editar e modifique as informações necessárias."
+    },
+    {
+        "question": "Posso filtrar minhas transações?",
+        "answer": "Sim, você pode filtrar suas transações por categoria, data ou tipo (receita/despesa) na tela de transações."
+    },
+    {
+        "question": "Como posso redefinir minha senha?",
+        "answer": "Na tela de login, clique em 'Esqueci minha senha' e siga as instruções para redefinir sua senha."
+    },
+    {
+        "question": "O SpendWise tem suporte para múltiplos usuários?",
+        "answer": "Sim, cada usuário pode criar sua conta e gerenciar suas próprias finanças de forma independente."
     }
 ]

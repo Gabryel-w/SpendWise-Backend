@@ -158,11 +158,11 @@ app.delete("/transactions/:id", async(req, res) => {
     res.json({message: "Transação removida com sucesso."});
 });
 
-app.post("/api/chat", (req, res) => {
-    const { message } = req.body;
+app.post("/api/chat", async (req, res) => {
+    const { message, user_id } = req.body;
 
-    if (!message) {
-        return res.status(400).json({ error: "Mensagem não fornecida." });
+    if (!message || !user_id) {
+        return res.status(400).json({ error: "Mensagem ou usuário não fornecido." });
     }
 
     const lowerMessage = message.toLowerCase();
@@ -174,6 +174,39 @@ app.post("/api/chat", (req, res) => {
         "Quanto gastei este mês?",
         "Qual foi minha maior despesa?"
     ];
+
+    if (lowerMessage.includes("quanto gastei este mês")) {
+        const currentMonth = new Date().getMonth() + 1;
+        const { data, error } = await supabase
+            .from("transactions")
+            .select("amount")
+            .eq("user_id", user_id)
+            .gte("date", `${new Date().getFullYear()}-${currentMonth}-01`)
+            .lte("date", `${new Date().getFullYear()}-${currentMonth}-31`);
+        
+        if (error) {
+            return res.status(500).json({ error: "Erro ao buscar transações." });
+        }
+        
+        const totalSpent = data.reduce((sum, transaction) => sum + transaction.amount, 0);
+        return res.json({ reply: `Você gastou um total de R$ ${totalSpent.toFixed(2)} neste mês.`, suggestedQuestions });
+    }
+
+    if (lowerMessage.includes("qual foi minha maior despesa")) {
+        const { data, error } = await supabase
+            .from("transactions")
+            .select("description, amount")
+            .eq("user_id", user_id)
+            .eq("type", "expense")
+            .order("amount", { ascending: false })
+            .limit(1);
+        
+        if (error || !data.length) {
+            return res.json({ reply: "Não foi possível encontrar sua maior despesa.", suggestedQuestions });
+        }
+        
+        return res.json({ reply: `Sua maior despesa foi com ${data[0].description}, no valor de R$ ${data[0].amount.toFixed(2)}.`, suggestedQuestions });
+    }
 
     if (foundQuestion) {
         return res.json({ reply: foundQuestion.answer, suggestedQuestions });
