@@ -41,6 +41,31 @@ app.get("/users", async (req, res) => {
     res.json(data);
 });
 
+
+app.get("/user-by-email", async (req, res) => {
+    const { email } = req.query;
+
+    if (!email) {
+        return res.status(400).json({ error: "Email é obrigatório" });
+    }
+
+    const { data, error } = await supabase
+        .from("users")
+        .select("*")
+        .eq("email", email)
+        .single();
+
+    if (error) {
+        return res.status(400).json(error);
+    }
+
+    if (!data) {
+        return res.status(404).json({ error: "Usuário não encontrado" });
+    }
+
+    res.json(data);
+});
+
 app.post("/register", async (req, res) => {
     const { email, password, name } = req.body;
 
