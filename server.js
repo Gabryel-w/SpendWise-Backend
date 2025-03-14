@@ -239,3 +239,222 @@ app.post("/api/chat", async (req, res) => {
         return res.json({ reply: "Desculpe, não entendi sua pergunta. Tente reformular.", suggestedQuestions });
     }
 });
+
+app.post("/budgets", async (req, res) => {
+    const { user_id, category, limit_amount } = req.body;
+
+    const { data, error } = await supabase
+        .from("budgets")
+        .insert([{ user_id, category, limit_amount }])
+        .select();
+
+    if (error) {
+        return res.status(400).json(error);
+    }
+
+    return res.status(201).json(data);
+});
+
+app.get("/budgets", async (req, res) => {
+    const { user_id } = req.query;
+
+    if (!user_id) {
+        return res.status(400).json({ error: "Usuário não autenticado" });
+    }
+
+    const { data, error } = await supabase
+        .from("budgets")
+        .select("*")
+        .eq("user_id", user_id);
+
+    if (error) {
+        return res.status(400).json(error);
+    }
+
+    res.json(data);
+});
+
+app.put("/budgets/:id", async (req, res) => {
+    const { id } = req.params;
+    const { category, limit_amount } = req.body;
+
+    const { error } = await supabase
+        .from("budgets")
+        .update({ category, limit_amount })
+        .eq("id", id);
+
+    if (error) {
+        return res.status(400).json(error);
+    }
+
+    res.json({ message: "Orçamento atualizado com sucesso." });
+});
+
+app.delete("/budgets/:id", async (req, res) => {
+    const { id } = req.params;
+
+    const { error } = await supabase
+        .from("budgets")
+        .delete()
+        .eq("id", id);
+
+    if (error) {
+        return res.status(400).json(error);
+    }
+
+    res.json({ message: "Orçamento removido com sucesso." });
+});
+
+app.post("/goals", async (req, res) => {
+    const { user_id, title, goal_amount, deadline } = req.body;
+
+    const { data, error } = await supabase
+        .from("goals")
+        .insert([{ user_id, title, goal_amount, deadline }])
+        .select();
+
+    if (error) {
+        return res.status(400).json(error);
+    }
+
+    return res.status(201).json(data);
+});
+
+app.get("/goals", async (req, res) => {
+    const { user_id } = req.query;
+
+    if (!user_id) {
+        return res.status(400).json({ error: "Usuário não autenticado" });
+    }
+
+    const { data, error } = await supabase
+        .from("goals")
+        .select("*")
+        .eq("user_id", user_id);
+
+    if (error) {
+        return res.status(400).json(error);
+    }
+
+    res.json(data);
+});
+
+app.put("/goals/:id", async (req, res) => {
+    const { id } = req.params;
+    const { title, goal_amount, saved_amount, deadline } = req.body;
+
+    const { error } = await supabase
+        .from("goals")
+        .update({ title, goal_amount, saved_amount, deadline })
+        .eq("id", id);
+
+    if (error) {
+        return res.status(400).json(error);
+    }
+
+    res.json({ message: "Meta atualizada com sucesso." });
+});
+
+app.delete("/goals/:id", async (req, res) => {
+    const { id } = req.params;
+
+    const { error } = await supabase
+        .from("goals")
+        .delete()
+        .eq("id", id);
+
+    if (error) {
+        return res.status(400).json(error);
+    }
+
+    res.json({ message: "Meta removida com sucesso." });
+});
+
+app.post("/goal-contributions", async (req, res) => {
+    const { goal_id, user_id, amount, date } = req.body;
+
+    const { data, error } = await supabase
+        .from("goal_contributions")
+        .insert([{ goal_id, user_id, amount, date }])
+        .select();
+
+    if (error) {
+        return res.status(400).json(error);
+    }
+
+    return res.status(201).json(data);
+});
+
+app.get("/goal-contributions", async (req, res) => {
+    const { goal_id, user_id } = req.query;
+
+    if (!goal_id || !user_id) {
+        return res.status(400).json({ error: "goal_id e user_id são obrigatórios" });
+    }
+
+    const { data, error } = await supabase
+        .from("goal_contributions")
+        .select("*")
+        .eq("goal_id", goal_id)
+        .eq("user_id", user_id)
+        .order("date", { ascending: false }); // Retorna as contribuições mais recentes primeiro
+
+    if (error) {
+        return res.status(400).json(error);
+    }
+
+    res.json(data);
+});
+
+app.put("/goal-contributions/:id", async (req, res) => {
+    const { id } = req.params;
+    const { amount, date } = req.body;
+
+    const { error } = await supabase
+        .from("goal_contributions")
+        .update({ amount, date })
+        .eq("id", id);
+
+    if (error) {
+        return res.status(400).json(error);
+    }
+
+    res.json({ message: "Contribuição atualizada com sucesso." });
+});
+
+app.delete("/goal-contributions/:id", async (req, res) => {
+    const { id } = req.params;
+
+    const { error } = await supabase
+        .from("goal_contributions")
+        .delete()
+        .eq("id", id);
+
+    if (error) {
+        return res.status(400).json(error);
+    }
+
+    res.json({ message: "Contribuição removida com sucesso." });
+});
+
+app.get("/goal-contributions/total", async (req, res) => {
+    const { goal_id, user_id } = req.query;
+
+    if (!goal_id || !user_id) {
+        return res.status(400).json({ error: "goal_id e user_id são obrigatórios" });
+    }
+
+    const { data, error } = await supabase
+        .from("goal_contributions")
+        .select("amount")
+        .eq("goal_id", goal_id)
+        .eq("user_id", user_id);
+
+    if (error) {
+        return res.status(400).json(error);
+    }
+
+    const totalContributed = data.reduce((sum, contrib) => sum + contrib.amount, 0);
+
+    res.json({ totalContributed });
+});
