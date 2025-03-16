@@ -371,39 +371,68 @@ app.delete("/goals/:id", async (req, res) => {
 });
 
 app.post("/goal-contributions", async (req, res) => {
-    const { goal_id, user_id, amount, date } = req.body;
+    const { goal_id, amount } = req.body;
 
-    const { data, error } = await supabase
+    const contributed_at = new Date().toISOString();
+
+    const { error: contributionError } = await supabase
         .from("goal_contributions")
-        .insert([{ goal_id, user_id, amount, date }])
-        .select();
+        .insert([{ goal_id, amount, contributed_at }]);
 
-    if (error) {
-        return res.status(400).json(error);
+    if (contributionError) {
+        return res.status(400).json(contributionError);
     }
 
-    return res.status(201).json(data);
+    const { data: goalData, error: goalFetchError } = await supabase
+        .from("goals")
+        .select("saved_amount")
+        .eq("id", goal_id)
+        .single();
+
+    if (goalFetchError) {
+        return res.status(400).json(goalFetchError);
+    }
+
+    const updatedSavedAmount = parseFloat(goalData.saved_amount) + parseFloat(amount);
+
+    const { error: goalUpdateError } = await supabase
+        .from("goals")
+        .update({ saved_amount: updatedSavedAmount })
+        .eq("id", goal_id);
+
+    if (goalUpdateError) {
+        return res.status(400).json(goalUpdateError);
+    }
+
+    res.status(201).json({ message: "Contribuição adicionada e meta atualizada com sucesso." });
 });
 
 app.get("/goal-contributions", async (req, res) => {
-    const { goal_id, user_id } = req.query;
-
-    if (!goal_id || !user_id) {
-        return res.status(400).json({ error: "goal_id e user_id são obrigatórios" });
-    }
+    const { user_id } = req.query;
 
     const { data, error } = await supabase
         .from("goal_contributions")
-        .select("*")
-        .eq("goal_id", goal_id)
-        .eq("user_id", user_id)
-        .order("date", { ascending: false }); // Retorna as contribuições mais recentes primeiro
+        .select(`
+            id,
+            goal_id,
+            amount,
+            contributed_at,
+            goals (
+                id,
+                user_id
+            )
+        `)
+        .order("contributed_at", { ascending: false });
 
     if (error) {
         return res.status(400).json(error);
     }
 
-    res.json(data);
+    const filteredContributions = data.filter(
+        (contribution) => contribution.goals?.user_id === user_id
+    );
+
+    res.status(200).json(filteredContributions);
 });
 
 app.put("/goal-contributions/:id", async (req, res) => {
@@ -457,4 +486,29 @@ app.get("/goal-contributions/total", async (req, res) => {
     const totalContributed = data.reduce((sum, contrib) => sum + contrib.amount, 0);
 
     res.json({ totalContributed });
+});
+
+app.get("/goal-contributions/by-goal", async (req, res) => {
+    const { goal_id } = req.query;
+
+    if (!goal_id) {
+        return res.status(400).json({ error: "goal_id é obrigatório." });
+    }
+
+    const { data, error } = await supabase
+        .from("goal_contributions")
+        .select(`
+            id,
+            goal_id,
+            amount,
+            contributed_at
+        `)
+        .eq("goal_id", goal_id)
+        .order("contributed_at", { ascending: false });
+
+    if (error) {
+        return res.status(400).json(error);
+    }
+
+    res.status(200).json(data);
 });
