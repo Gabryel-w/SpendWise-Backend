@@ -306,11 +306,11 @@ app.delete("/budgets/:id", async (req, res) => {
 });
 
 app.post("/goals", async (req, res) => {
-    const { user_id, title, goal_amount, deadline } = req.body;
+    const { user_id, title, goal_amount, deadline, saved_amount } = req.body;
 
     const { data, error } = await supabase
         .from("goals")
-        .insert([{ user_id, title, goal_amount, deadline }])
+        .insert([{ user_id, title, goal_amount, deadline, saved_amount }])
         .select();
 
     if (error) {
