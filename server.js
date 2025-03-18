@@ -339,7 +339,7 @@ app.get("/goals", async (req, res) => {
     const { data: collaboratorGoals, error: collaboratorError } = await supabase
         .from("goal_collaborators")
         .select("goal_id")
-        .eq("collaborator_id", user_id);
+        .eq("user_id", user_id); // Changed from collaborator_id to user_id
 
     if (collaboratorError) {
         return res.status(400).json(collaboratorError);
