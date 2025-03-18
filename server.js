@@ -523,7 +523,9 @@ app.get("/goal-contributions/by-goal", async (req, res) => {
             id,
             goal_id,
             amount,
-            contributed_at
+            contributed_at,
+            user_id,  
+            users(name) 
         `)
         .eq("goal_id", goal_id)
         .order("contributed_at", { ascending: false });
