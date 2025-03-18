@@ -512,3 +512,54 @@ app.get("/goal-contributions/by-goal", async (req, res) => {
 
     res.status(200).json(data);
 });
+
+app.post("/:goalId/collaborators", async (req, res) => {
+    const { goalId } = req.params;
+    const { userEmail } = req.body;
+  
+    const { data: user, error: userError } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", userEmail)
+      .single();
+  
+    if (userError || !user) {
+      return res.status(404).json({ error: "Usuário não encontrado" });
+    }
+  
+    const { error } = await supabase.from("goal_collaborators").insert([
+      { goal_id: goalId, user_id: user.id, role: "collaborator" },
+    ]);
+  
+    if (error) return res.status(500).json({ error: error.message });
+  
+    res.json({ message: "Colaborador adicionado com sucesso!" });
+  });
+  
+  app.get("/:goalId/collaborators", async (req, res) => {
+    const { goalId } = req.params;
+  
+    const { data, error } = await supabase
+      .from("goal_collaborators")
+      .select("user_id, users(email)")
+      .eq("goal_id", goalId)
+      .join("users", "goal_collaborators.user_id", "users.id");
+  
+    if (error) return res.status(500).json({ error: error.message });
+  
+    res.json(data);
+  });
+  
+  app.delete("/:goalId/collaborators/:userId", async (req, res) => {
+    const { goalId, userId } = req.params;
+  
+    const { error } = await supabase
+      .from("goal_collaborators")
+      .delete()
+      .eq("goal_id", goalId)
+      .eq("user_id", userId);
+  
+    if (error) return res.status(500).json({ error: error.message });
+  
+    res.json({ message: "Colaborador removido com sucesso!" });
+  });
