@@ -327,40 +327,38 @@ app.get("/goals", async (req, res) => {
         return res.status(400).json({ error: "Usuário não autenticado" });
     }
 
-    const { data: ownedGoals, error: ownedError } = await supabase
+    const { data: userGoals, error: userGoalsError } = await supabase
         .from("goals")
         .select("*")
         .eq("user_id", user_id);
 
-    if (ownedError) {
-        return res.status(400).json(ownedError);
+    if (userGoalsError) {
+        return res.status(400).json(userGoalsError);
     }
 
-    const { data: collaboratorGoals, error: collabError } = await supabase
-        .from("collaborators")
+    const { data: collaboratorGoals, error: collaboratorError } = await supabase
+        .from("goal_collaborators")
         .select("goal_id")
         .eq("collaborator_id", user_id);
 
-    if (collabError) {
-        return res.status(400).json(collabError);
+    if (collaboratorError) {
+        return res.status(400).json(collaboratorError);
     }
 
-    if (!collaboratorGoals.length) {
-        return res.json(ownedGoals);
-    }
+    const collaboratorGoalIds = collaboratorGoals.map((g) => g.goal_id);
 
-    const goalIds = collaboratorGoals.map((collab) => collab.goal_id);
-
-    const { data: sharedGoals, error: sharedError } = await supabase
+    const { data: goalsSharedWithUser, error: sharedGoalsError } = await supabase
         .from("goals")
         .select("*")
-        .in("id", goalIds);
+        .in("id", collaboratorGoalIds);
 
-    if (sharedError) {
-        return res.status(400).json(sharedError);
+    if (sharedGoalsError) {
+        return res.status(400).json(sharedGoalsError);
     }
 
-    res.json([...ownedGoals, ...sharedGoals]);
+    const allGoals = [...userGoals, ...goalsSharedWithUser];
+
+    res.json(allGoals);
 });
 
 app.put("/goals/:id", async (req, res) => {
