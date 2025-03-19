@@ -601,33 +601,36 @@ app.delete("/:goalId/collaborators/:userId", async (req, res) => {
 });
 
 app.get("/goals/:goal_id/collaborators", async (req, res) => {
-    const { goal_id } = req.params;
+    try {
+        const { goal_id } = req.params;
 
-    if (!goal_id) {
-        return res.status(400).json({ error: "goal_id é obrigatório." });
-    }
+        if (!goal_id) {
+            return res.status(400).json({ error: "goal_id é obrigatório." });
+        }
 
-    const { data, error } = await supabase
-        .from("goal_collaborators")
-        .select(`
-        id,
-        role,
-        users: user_id (id, name, email)`)
-        .eq("goal_id", goal_id)
-        .order("created_at", { ascending: true });
+        const { data, error } = await supabase
+            .from("goal_collaborators")
+            .select(`
+                id,
+                role,
+                users: user_id (id, name, email)
+            `)
+            .eq("goal_id", goal_id)
+            .order("created_at", { ascending: true });
 
         if (error) {
-            return res.status(400).json(error);
+            return res.status(400).json({ error: error.message });
         }
-        
+
         const formattedData = data.map(collaborator => ({
-            id: collaborator.user_id,
+            id: collaborator.user_id, // Aqui deveria ser "collaborator.users.id"?
             name: collaborator.users?.name || "Desconhecido",
             email: collaborator.users?.email || "Não informado",
             role: collaborator.role
         }));
-        
-        res.status(200).json(formattedData);
 
-    res.status(200).json(data);
+        return res.status(200).json(formattedData);
+    } catch (err) {
+        return res.status(500).json({ error: "Erro interno no servidor." });
+    }
 });
