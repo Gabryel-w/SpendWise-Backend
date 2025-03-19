@@ -6,7 +6,13 @@ const WebSocket = require("ws");
 const fs = require("fs");
 
 const app = express();
-app.use(cors());
+
+app.use(cors({
+    origin: "*",
+    methods: "GET,POST,PUT,DELETE",
+    allowedHeaders: "Content-Type,Authorization"
+  }));
+
 app.use(express.json());
 
 const server = http.createServer(app);
