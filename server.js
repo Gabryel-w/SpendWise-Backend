@@ -393,7 +393,7 @@ app.delete("/goals/:id", async (req, res) => {
 });
 
 app.post("/goal-contributions", async (req, res) => {
-    const { goal_id, amount, user_id } = req.body; 
+    const { goal_id, amount, user_id } = req.body;
 
     if (!user_id) {
         return res.status(400).json({ error: "user_id é obrigatório." });
@@ -602,16 +602,24 @@ app.get("/goals/:goal_id/collaborators", async (req, res) => {
     const { data, error } = await supabase
         .from("goal_collaborators")
         .select(`
-            user_id,
-            role,
-            users(name, email)
-        `)
+        id,
+        role,
+        users: user_id (id, name, email)`)
         .eq("goal_id", goal_id)
         .order("created_at", { ascending: true });
 
-    if (error) {
-        return res.status(400).json(error);
-    }
+        if (error) {
+            return res.status(400).json(error);
+        }
+        
+        const formattedData = data.map(collaborator => ({
+            id: collaborator.user_id,
+            name: collaborator.users?.name || "Desconhecido",
+            email: collaborator.users?.email || "Não informado",
+            role: collaborator.role
+        }));
+        
+        res.status(200).json(formattedData);
 
     res.status(200).json(data);
 });
