@@ -7,9 +7,15 @@ const fs = require("fs");
 
 const app = express();
 
-app.use(cors());
+app.use(cors({ origin: '*' }));
 
 app.use(express.json());
+
+app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    next();
+});
 
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
