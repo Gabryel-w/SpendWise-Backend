@@ -393,13 +393,17 @@ app.delete("/goals/:id", async (req, res) => {
 });
 
 app.post("/goal-contributions", async (req, res) => {
-    const { goal_id, amount } = req.body;
+    const { goal_id, amount, user_id } = req.body; 
+
+    if (!user_id) {
+        return res.status(400).json({ error: "user_id é obrigatório." });
+    }
 
     const contributed_at = new Date().toISOString();
 
     const { error: contributionError } = await supabase
         .from("goal_contributions")
-        .insert([{ goal_id, amount, contributed_at }]);
+        .insert([{ goal_id, user_id, amount, contributed_at }]);
 
     if (contributionError) {
         return res.status(400).json(contributionError);
