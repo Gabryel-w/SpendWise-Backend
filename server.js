@@ -608,7 +608,29 @@ app.get("/goals/:goal_id/collaborators", async (req, res) => {
             return res.status(400).json({ error: "goal_id é obrigatório." });
         }
 
-        const { data, error } = await supabase
+        // Buscar o criador da meta
+        const { data: goalData, error: goalError } = await supabase
+            .from("goals")
+            .select(`
+                user_id,
+                users: user_id (id, name, email)
+            `)
+            .eq("id", goal_id)
+            .single();
+
+        if (goalError) {
+            return res.status(400).json({ error: goalError.message });
+        }
+
+        const goalCreator = {
+            id: goalData.users.id,
+            name: goalData.users.name || "Desconhecido",
+            email: goalData.users.email || "Não informado",
+            role: "owner" 
+        };
+
+        // Buscar colaboradores da meta
+        const { data: collaboratorsData, error: collaboratorsError } = await supabase
             .from("goal_collaborators")
             .select(`
                 id,
@@ -618,19 +640,25 @@ app.get("/goals/:goal_id/collaborators", async (req, res) => {
             .eq("goal_id", goal_id)
             .order("created_at", { ascending: true });
 
-        if (error) {
-            return res.status(400).json({ error: error.message });
+        if (collaboratorsError) {
+            return res.status(400).json({ error: collaboratorsError.message });
         }
 
-        const formattedData = data.map(collaborator => ({
-            id: collaborator.user_id, // Aqui deveria ser "collaborator.users.id"?
+        const collaborators = collaboratorsData.map(collaborator => ({
+            id: collaborator.users?.id,
             name: collaborator.users?.name || "Desconhecido",
             email: collaborator.users?.email || "Não informado",
             role: collaborator.role
         }));
 
-        return res.status(200).json(formattedData);
+        // Verifica se o criador já está na lista de colaboradores para evitar duplicação
+        const allUsers = [goalCreator, ...collaborators].filter(
+            (user, index, self) => index === self.findIndex(u => u.id === user.id)
+        );
+
+        return res.status(200).json(allUsers);
     } catch (err) {
         return res.status(500).json({ error: "Erro interno no servidor." });
     }
 });
+
