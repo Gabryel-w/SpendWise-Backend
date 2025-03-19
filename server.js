@@ -524,7 +524,7 @@ app.get("/goal-contributions/by-goal", async (req, res) => {
             goal_id,
             amount,
             contributed_at,
-            user_id,  
+            user_id, 
             users(name) 
         `)
         .eq("goal_id", goal_id)
