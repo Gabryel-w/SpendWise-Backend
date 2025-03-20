@@ -338,45 +338,60 @@ app.post("/goals", async (req, res) => {
 });
 
 app.get("/goals", async (req, res) => {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ error: "Token JWT ausente" });
+    }
+  
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return res.status(401).json({ error: "Usuário não autenticado" });
+    }
+  
     const { user_id } = req.query;
-
+  
     if (!user_id) {
-        return res.status(400).json({ error: "Usuário não autenticado" });
+      return res.status(400).json({ error: "Usuário não autenticado" });
     }
-
+  
+    // Verifica se o user_id da query é o mesmo do usuário autenticado
+    if (user_id !== user.id) {
+      return res.status(403).json({ error: "Acesso negado" });
+    }
+  
     const { data: userGoals, error: userGoalsError } = await supabase
-        .from("goals")
-        .select("*")
-        .eq("user_id", user_id);
-
+      .from("goals")
+      .select("*")
+      .eq("user_id", user_id);
+  
     if (userGoalsError) {
-        return res.status(400).json(userGoalsError);
+      return res.status(400).json(userGoalsError);
     }
-
+  
     const { data: collaboratorGoals, error: collaboratorError } = await supabase
-        .from("goal_collaborators")
-        .select("goal_id")
-        .eq("user_id", user_id);
-
+      .from("goal_collaborators")
+      .select("goal_id")
+      .eq("user_id", user_id);
+  
     if (collaboratorError) {
-        return res.status(400).json(collaboratorError);
+      return res.status(400).json(collaboratorError);
     }
-
+  
     const collaboratorGoalIds = collaboratorGoals.map((g) => g.goal_id);
-
+  
     const { data: goalsSharedWithUser, error: sharedGoalsError } = await supabase
-        .from("goals")
-        .select("*")
-        .in("id", collaboratorGoalIds);
-
+      .from("goals")
+      .select("*")
+      .in("id", collaboratorGoalIds);
+  
     if (sharedGoalsError) {
-        return res.status(400).json(sharedGoalsError);
+      return res.status(400).json(sharedGoalsError);
     }
-
+  
     const allGoals = [...userGoals, ...goalsSharedWithUser];
-
+  
     res.json(allGoals);
-});
+  });
 
 app.put("/goals/:id", async (req, res) => {
     const { id } = req.params;
