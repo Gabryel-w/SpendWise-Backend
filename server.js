@@ -31,15 +31,6 @@ server.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
 
 const supabase = require("./supabase");
 
-// Middleware para configurar o token JWT globalmente
-app.use((req, res, next) => {
-    const token = req.headers.authorization?.split(" ")[1]; // Extrai o token JWT
-    if (token) {
-        supabase.auth.setAuth(token); // Configura o token JWT globalmente
-    }
-    next();
-});
-
 const broadcast = (message) => {
     wss.clients.forEach(client => {
         if (client.readyState === WebSocket.OPEN) {
@@ -47,6 +38,77 @@ const broadcast = (message) => {
         }
     });
 };
+
+const authenticateUser = async (req, res, next) => {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ error: "Token JWT ausente" });
+    }
+  
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    if (error || !user) {
+      return res.status(401).json({ error: "Usuário não autenticado" });
+    }
+  
+    req.user = user; // Adiciona o usuário autenticado ao objeto `req`
+    next();
+};
+
+// Public routes
+app.post("/register", async (req, res) => {
+    const { email, password, name } = req.body;
+
+    // Cria usuário no Supabase Auth
+    const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+    });
+
+    if (error) {
+        return res.status(400).json({ error: error.message });
+    }
+
+    // Insere o usuário na tabela "users"
+    const { data: userData, error: userError } = await supabase
+        .from("users")
+        .insert([{ id: data.user.id, email, name }]);
+
+    if (userError) {
+        return res.status(400).json({ error: userError.message });
+    }
+
+    return res.status(201).json(userData);
+});
+
+app.post("/login", async (req, res) => {
+    const { email, password } = req.body;
+
+    // Busca o usuário pelo email
+    const { data: user, error: userError } = await supabase
+        .from("users")
+        .select("*")
+        .eq("email", email)
+        .single();
+
+    if (userError || !user) {
+        return res.status(400).json({ error: "Usuário não encontrado" });
+    }
+
+    // Verifica a senha com a autenticação do Supabase
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+    });
+
+    if (authError) {
+        return res.status(400).json({ error: "Credenciais inválidas" });
+    }
+
+    res.status(200).json({ user, session: authData.session });
+});
+
+// Protected routes
+app.use(authenticateUser);
 
 app.get("/users", async (req, res) => {
     const { data, error } = await supabase.from("users").select("*");
@@ -82,58 +144,6 @@ app.get("/user-by-email", async (req, res) => {
 
     res.json(data);
 });
-
-app.post("/register", async (req, res) => {
-    const { email, password, name } = req.body;
-
-    // Cria usuário no Supabase Auth
-    const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-    });
-
-    if (error) {
-        return res.status(400).json({ error: error.message });
-    }
-
-    // Insere o usuário na tabela "users"
-    const { data: userData, error: userError } = await supabase
-        .from("users")
-        .insert([{ id: data.user.id, email, name }]);
-
-    if (userError) {
-        return res.status(400).json({ error: userError.message });
-    }
-
-    return res.status(201).json(userData);
-});
-
-app.post("/login", async (req, res) => {
-    const { email, password } = req.body;
-  
-    // Verifica a senha com a autenticação do Supabase
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-  
-    if (authError) {
-      return res.status(400).json({ error: "Credenciais inválidas" });
-    }
-  
-    // Busca o usuário na tabela "users"
-    const { data: user, error: userError } = await supabase
-      .from("users")
-      .select("*")
-      .eq("id", authData.user.id)
-      .single();
-  
-    if (userError || !user) {
-      return res.status(400).json({ error: "Usuário não encontrado" });
-    }
-  
-    res.status(200).json({ user, session: authData.session });
-  });
 
 app.post("/transactions", async (req, res) => {
     const { user_id, description, type, amount, category, date } = req.body;
@@ -635,7 +645,7 @@ app.get("/goals/:goal_id/collaborators", async (req, res) => {
             id: goalData.users.id,
             name: goalData.users.name || "Desconhecido",
             email: goalData.users.email || "Não informado",
-            role: "owner"
+            role: "owner" 
         };
 
         // Buscar colaboradores da meta
