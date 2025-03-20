@@ -110,30 +110,30 @@ app.post("/register", async (req, res) => {
 
 app.post("/login", async (req, res) => {
     const { email, password } = req.body;
-
-    // Busca o usuário pelo email
-    const { data: user, error: userError } = await supabase
-        .from("users")
-        .select("*")
-        .eq("email", email)
-        .single();
-
-    if (userError || !user) {
-        return res.status(400).json({ error: "Usuário não encontrado" });
-    }
-
+  
     // Verifica a senha com a autenticação do Supabase
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      email,
+      password,
     });
-
+  
     if (authError) {
-        return res.status(400).json({ error: "Credenciais inválidas" });
+      return res.status(400).json({ error: "Credenciais inválidas" });
     }
-
+  
+    // Busca o usuário na tabela "users"
+    const { data: user, error: userError } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", authData.user.id)
+      .single();
+  
+    if (userError || !user) {
+      return res.status(400).json({ error: "Usuário não encontrado" });
+    }
+  
     res.status(200).json({ user, session: authData.session });
-});
+  });
 
 app.post("/transactions", async (req, res) => {
     const { user_id, description, type, amount, category, date } = req.body;
