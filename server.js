@@ -31,6 +31,15 @@ server.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
 
 const supabase = require("./supabase");
 
+// Middleware para configurar o token JWT globalmente
+app.use((req, res, next) => {
+    const token = req.headers.authorization?.split(" ")[1]; // Extrai o token JWT
+    if (token) {
+        supabase.auth.setAuth(token); // Configura o token JWT globalmente
+    }
+    next();
+});
+
 const broadcast = (message) => {
     wss.clients.forEach(client => {
         if (client.readyState === WebSocket.OPEN) {
@@ -626,7 +635,7 @@ app.get("/goals/:goal_id/collaborators", async (req, res) => {
             id: goalData.users.id,
             name: goalData.users.name || "Desconhecido",
             email: goalData.users.email || "Não informado",
-            role: "owner" 
+            role: "owner"
         };
 
         // Buscar colaboradores da meta
